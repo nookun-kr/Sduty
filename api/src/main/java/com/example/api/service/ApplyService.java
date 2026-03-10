@@ -1,6 +1,8 @@
 package com.example.api.service;
 
 import com.example.api.domain.Coupon;
+import com.example.api.producer.CouponCreateProducer;
+import com.example.api.repository.AppliedUserRepository;
 import com.example.api.repository.CouponCountRepository;
 import com.example.api.repository.CouponRepository;
 import org.springframework.stereotype.Service;
@@ -12,14 +14,24 @@ public class ApplyService
 
     private final CouponCountRepository couponCountRepository;
 
-    public ApplyService(CouponRepository couponRepository, CouponCountRepository couponCountRepository)
+    private final CouponCreateProducer couponCreateProducer;
+
+    private final AppliedUserRepository appliedUserRepository;
+
+    public ApplyService(CouponRepository couponRepository, CouponCountRepository couponCountRepository, CouponCreateProducer couponCreateProducer, AppliedUserRepository appliedUserRepository)
     {
         this.couponRepository = couponRepository;
         this.couponCountRepository = couponCountRepository;
+        this.couponCreateProducer = couponCreateProducer;
+        this.appliedUserRepository = appliedUserRepository;
     }
 
     public void apply(Long userId)
     {
+        Long apply = appliedUserRepository.add(userId);
+        if (apply != 1)
+            return;
+
         /*// redis incr -> key의 value를 1씩 증가
         // redis 는 싱글쓰레드로 동작
         long count = couponRepository.count();*/
@@ -31,6 +43,7 @@ public class ApplyService
             return;
         }
 
-        couponRepository.save(new Coupon(userId));
+        /*couponRepository.save(new Coupon(userId));*/
+        couponCreateProducer.create(userId);
     }
 }
